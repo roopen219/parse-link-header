@@ -1,11 +1,9 @@
 'use strict';
 
-var qs = require('querystring')
-  , url = require('url')
-  , xtend = require('xtend');
+var qs = require('qs');
 
-const PARSE_LINK_HEADER_MAXLEN = parseInt(process.env.PARSE_LINK_HEADER_MAXLEN) || 2000;
-const PARSE_LINK_HEADER_THROW_ON_MAXLEN_EXCEEDED = process.env.PARSE_LINK_HEADER_THROW_ON_MAXLEN_EXCEEDED != null
+const PARSE_LINK_HEADER_MAXLEN = 2000;
+const PARSE_LINK_HEADER_THROW_ON_MAXLEN_EXCEEDED = false
 
 function hasRel(x) {
   return x && x.rel;
@@ -13,7 +11,7 @@ function hasRel(x) {
 
 function intoRels (acc, x) {
   function splitRel (rel) {
-    acc[rel] = xtend(x, { rel: rel });
+    acc[rel] = { ...x, rel };
   }
 
   x.rel.split(/\s+/).forEach(splitRel);
@@ -33,15 +31,15 @@ function parseLink(link) {
     var m         =  link.match(/<?([^>]*)>(.*)/)
       , linkUrl   =  m[1]
       , parts     =  m[2].split(';')
-      , parsedUrl =  url.parse(linkUrl)
+      , parsedUrl =  new URL(linkUrl, 'https://example.com')
       , qry       =  qs.parse(parsedUrl.query);
 
     parts.shift();
 
     var info = parts
       .reduce(createObjects, {});
-    
-    info = xtend(qry, info);
+
+    info = { ...qry, ...info };
     info.url = linkUrl;
     return info;
   } catch (e) {
